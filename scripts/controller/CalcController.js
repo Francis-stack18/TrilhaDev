@@ -1,6 +1,7 @@
 class CalcController {
   constructor() {
-    this._audio = new Audio("click.mp3")
+    this._history = []
+    this._audio = new Audio("/audio/click.mp3")
     this._audioOnOf = false;
     this._lastOperator = ""
     this._lastNumber = ""
@@ -13,6 +14,7 @@ class CalcController {
     this.initialize();
     this.initButtonsEvents();
     this.initKeyboard()
+    this.initHistoryButton()
   }
 
   pasteFromClipboard(){
@@ -44,6 +46,31 @@ class CalcController {
     })
   }
 
+  updateHistory(){
+    let historyContainer = document.querySelector("#history-list")
+      historyContainer.innerHTML = ""
+      this._history.forEach(item =>{
+        let li = document.createElement("li")
+        li.style.marginBottom = "8px"
+        li.innerHTML = `<strong>${item.fullOperation}</strong>`
+        historyContainer.appendChild(li)
+      })
+
+  }
+  saveToHistory(operation, result){
+    let historyItem = {
+      fullOperation: operation + " = " + result
+    }
+    this._history.unshift(historyItem)
+    this.updateHistory()
+  }
+initHistoryButton(){
+    let btnClear = document.querySelector("#btn-clear-history")
+    btnClear.addEventListener("click", () =>{
+      this._history = []
+      this.updateHistory()
+    })
+  }
   toggleAudio(){
     this._audioOnOf = !this._audioOnOf
   }
@@ -150,14 +177,18 @@ class CalcController {
     }
   }
   calc(){
+    let operationString = ""
     let last = ""
     this._lastOperator = this.getLastItem()
     if(this._operation.length < 3){
       let firstItem = this._operation[0]
       this._operation = [firstItem, this._lastOperator, this._lastNumber]
+      operationString = `${firstItem} ${this._lastOperator} ${this._lastNumber}`
+    }else{
+      operationString = this._operation.join(" ");
     }
     if(this._operation.length > 3){
-      let last = this._operation.pop()
+      last = this._operation.pop()
       this._lastNumber = this.getResult()
     }else if(this._operation.length == 3){
       this._lastNumber = this.getLastItem(false)
@@ -171,6 +202,7 @@ class CalcController {
     this._operation = [result]
     if(last) this._operation.push(last)
     }
+    this.saveToHistory(operationString, result)
     this.setLastNumberToDisplay()
   }
 
@@ -237,7 +269,7 @@ class CalcController {
       case "subtracao":
         this.addOperation("-");
         break;
-      case "divisão":
+      case "divisao":
         this.addOperation("/");
         break;
       case "multiplicacao":
